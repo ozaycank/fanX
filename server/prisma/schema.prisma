@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  tweets    Tweet[]
+}
+
+model Tweet {
+  id            Int      @id @default(autoincrement())
+  content       String   @db.VarChar(280) // Twitter klasik limiti
+  sportCategory String?  // Futbol, Basketbol, CS:GO vb.
+  tags          String?  // Virgülle ayrılmış etiketler: #Fenerbahce,#Lakers
+  createdAt     DateTime @default(now())
+  authorId      Int
+  author        User     @relation(fields: [authorId], references: [id])
+}
