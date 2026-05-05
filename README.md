@@ -28,7 +28,7 @@ This project is a scalable backend system that mimics Twitter’s core feed func
 ## 📦 Setup
 
 ```bash
-git clone <repo>
+git clone github.com/ozaycank/fanX
 cd funX
 npm install
 docker-compose up -d
