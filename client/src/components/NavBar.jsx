@@ -19,7 +19,10 @@ const Navbar = () => {
         <div className="space-x-4 flex items-center">
           {user ? (
             <>
-              <span className="font-semibold text-yellow-400">@{user.username}</span>
+             {/* Kullanıcı adına tıklandığında profile git */}
+            <Link to="/profile" className="text-yellow-600 font-bold hover:underline">
+              @{user.username}
+            </Link>
               <button onClick={handleLogout} className="bg-red-500 px-3 py-1 rounded hover:bg-red-600 transition">
                 Çıkış Yap
               </button>

@@ -5,6 +5,8 @@ const cors = require("cors");
 const authRoutes = require("./routes/auth.routes");
 const tweetRoutes = require("./routes/tweet.routes");
 const feedRoutes = require("./routes/feed.routes");
+const userRoutes = require("./routes/user.routes");
+
 
 const app = express();
 
@@ -16,5 +18,6 @@ app.use(express.json()); // JSON body parse et
 app.use("/api/auth", authRoutes);
 app.use("/api/tweets", tweetRoutes);
 app.use("/api/feed", feedRoutes);
+app.use("/api/users", userRoutes);
 
 module.exports = app;
