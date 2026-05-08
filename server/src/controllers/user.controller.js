@@ -1,13 +1,34 @@
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcrypt");
-
+const { redisClient } = require("../utils/redis");
 const prisma = new PrismaClient();
 
-// Profil Bilgilerini Güncelle
+// Herhangi bir kullanıcıyı adına göre getir (Profil görüntüleme için)
+exports.getUserByUsername = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const user = await prisma.user.findUnique({
+      where: { username },
+      select: {
+        username: true,
+        displayName: true,
+        profilePic: true,
+        supportedTeam: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: "Sunucu hatası." });
+  }
+};
+
 exports.updateProfile = async (req, res) => {
   try {
     const { displayName, supportedTeam, profilePic } = req.body;
-    const userId = req.user.id; // auth.middleware'den geliyor
+    const userId = req.user.id;
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
@@ -18,8 +39,16 @@ exports.updateProfile = async (req, res) => {
         displayName: true,
         supportedTeam: true,
         profilePic: true,
-      }, // Şifreyi geri dönmemek için
+      },
     });
+
+    // Önemli: Cache temizleme (Önceki mesajda eklediğimiz mantık)
+    try {
+      const keys = await redisClient.keys("global_feed_*");
+      if (keys.length > 0) await redisClient.del(keys);
+    } catch (err) {
+      console.error("Redis Hatası:", err);
+    }
 
     res.json(updatedUser);
   } catch (error) {
@@ -27,20 +56,16 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
-// Parola Güncelle
 exports.changePassword = async (req, res) => {
   try {
     const { oldPassword, newPassword } = req.body;
     const userId = req.user.id;
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
 
-    // Eski şifre doğru mu?
-    if (!(await bcrypt.compare(oldPassword, user.password))) {
-      return res.status(400).json({ error: "Eski parola hatalı." });
-    }
+    if (!isMatch) return res.status(400).json({ error: "Eski parola hatalı." });
 
-    // Yeni şifreyi hashle ve kaydet
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: { id: userId },

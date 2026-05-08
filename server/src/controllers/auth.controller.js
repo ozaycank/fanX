@@ -42,3 +42,22 @@ exports.login = async (req, res) => {
     res.status(500).json({ error: "Giriş işlemi sırasında bir hata oluştu." });
   }
 };
+// Diğer fonksiyonların yanına ekleyin
+exports.getMe = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        displayName: true,
+        supportedTeam: true,
+        profilePic: true,
+      },
+    });
+    res.json({ user });
+  } catch (error) {
+    res.status(500).json({ error: "Kullanıcı bilgisi alınamadı." });
+  }
+};

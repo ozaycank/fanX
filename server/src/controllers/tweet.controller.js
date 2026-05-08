@@ -1,155 +1,102 @@
 const { PrismaClient } = require("@prisma/client");
 const { redisClient } = require("../utils/redis");
-
 const prisma = new PrismaClient();
 
-// Yardımcı Fonksiyon: Tüm feed cache'lerini temizle
-const clearFeedCache = async () => {
+// Tüm feed cache'lerini temizleyen yardımcı fonksiyon
+const clearAllFeedCache = async () => {
   try {
-    const keys = ["global_feed_newest", "global_feed_up", "global_feed_down"];
-    await redisClient.del(keys);
+    const keys = await redisClient.keys("global_feed_*");
+    if (keys.length > 0) await redisClient.del(keys);
   } catch (err) {
-    console.error(
-      "Redis temizleme hatası (Önemli değil, sistem çalışır):",
-      err,
-    );
+    console.error("Redis temizleme hatası:", err);
+  }
+};
+
+exports.getFeed = async (req, res) => {
+  try {
+    const { sort } = req.query; // newest, up, down
+    const cacheKey = `global_feed_${sort || "newest"}`;
+
+    const cachedData = await redisClient.get(cacheKey);
+    if (cachedData) return res.json(JSON.parse(cachedData));
+
+    let orderBy = { createdAt: "desc" };
+    if (sort === "up") orderBy = { upvoters: { _count: "desc" } };
+    if (sort === "down") orderBy = { downvoters: { _count: "desc" } };
+
+    const tweets = await prisma.tweet.findMany({
+      orderBy,
+      include: {
+        author: {
+          select: {
+            username: true,
+            displayName: true,
+            profilePic: true,
+            supportedTeam: true,
+          },
+        },
+        _count: { select: { upvoters: true, downvoters: true } },
+        upvoters: { select: { id: true } },
+        downvoters: { select: { id: true } },
+      },
+    });
+
+    await redisClient.setEx(cacheKey, 300, JSON.stringify(tweets));
+    res.json(tweets);
+  } catch (error) {
+    res.status(500).json({ error: "Feed yüklenemedi" });
   }
 };
 
 exports.createTweet = async (req, res) => {
   try {
     const { content, sportCategory, tags } = req.body;
-    const authorId = req.user.id;
-
     const tweet = await prisma.tweet.create({
-      data: {
-        content,
-        sportCategory: sportCategory || null,
-        tags: tags || null,
-        authorId,
-      },
+      data: { content, sportCategory, tags, authorId: req.user.id },
       include: {
         author: {
-          select: {
-            username: true,
-            displayName: true,
-            profilePic: true,
-            supportedTeam: true,
-          },
+          select: { username: true, displayName: true, profilePic: true },
         },
-        upvoters: { select: { id: true } },
-        downvoters: { select: { id: true } },
       },
     });
 
-    // Yeni tweet atıldığında tüm sıralama cache'lerini geçersiz kıl
-    await clearFeedCache();
-
+    await clearAllFeedCache(); // Cache temizlenmezse F5 atınca yeni tweet görünmez
     res.status(201).json(tweet);
   } catch (error) {
-    console.error("CREATE TWEET HATASI:", error);
-    res.status(500).json({ error: "Tweet atılamadı 🚫" });
+    res.status(500).json({ error: "Tweet atılamadı" });
   }
 };
 
 exports.upvoteTweet = async (req, res) => {
   try {
     const tweetId = parseInt(req.params.id);
-    const userId = req.user.id;
-
-    const updatedTweet = await prisma.tweet.update({
+    await prisma.tweet.update({
       where: { id: tweetId },
       data: {
-        downvoters: { disconnect: { id: userId } },
-        upvoters: { connect: { id: userId } },
+        downvoters: { disconnect: { id: req.user.id } },
+        upvoters: { connect: { id: req.user.id } },
       },
-      include: { upvoters: true, downvoters: true },
     });
-
-    // Oylama değişince sıralama değişebileceği için cache'i temizle
-    await clearFeedCache();
-
-    res.json({
-      message: "Upvoted",
-      upvotes: updatedTweet.upvoters.length,
-      downvotes: updatedTweet.downvoters.length,
-    });
+    await clearAllFeedCache(); // Sıralamanın değişmesi için cache temizlenmeli
+    res.json({ message: "Upvoted" });
   } catch (error) {
-    res.status(500).json({ error: "İşlem başarısız" });
+    res.status(500).json({ error: "Hata" });
   }
 };
 
 exports.downvoteTweet = async (req, res) => {
   try {
     const tweetId = parseInt(req.params.id);
-    const userId = req.user.id;
-
-    const updatedTweet = await prisma.tweet.update({
+    await prisma.tweet.update({
       where: { id: tweetId },
       data: {
-        upvoters: { disconnect: { id: userId } },
-        downvoters: { connect: { id: userId } },
-      },
-      include: { upvoters: true, downvoters: true },
-    });
-
-    await clearFeedCache();
-
-    res.json({
-      message: "Downvoted",
-      upvotes: updatedTweet.upvoters.length,
-      downvotes: updatedTweet.downvoters.length,
-    });
-  } catch (error) {
-    res.status(500).json({ error: "İşlem başarısız" });
-  }
-};
-
-exports.getFeed = async (req, res) => {
-  try {
-    const { sort } = req.query;
-    const cacheKey = `global_feed_${sort || "newest"}`;
-
-    // Redis bağlantısı varsa cache'e bak
-    try {
-      const cachedData = await redisClient.get(cacheKey);
-      if (cachedData) return res.json(JSON.parse(cachedData));
-    } catch (redisErr) {
-      console.log("Redis meşgul veya kapalı, DB'den devam ediliyor...");
-    }
-
-    let orderByClause = { createdAt: "desc" };
-
-    if (sort === "up") {
-      orderByClause = { upvoters: { _count: "desc" } };
-    } else if (sort === "down") {
-      orderByClause = { downvoters: { _count: "desc" } };
-    }
-
-    const tweets = await prisma.tweet.findMany({
-      orderBy: orderByClause,
-      include: {
-        author: {
-          select: {
-            username: true,
-            displayName: true,
-            profilePic: true,
-            supportedTeam: true,
-          },
-        },
-        upvoters: { select: { id: true } },
-        downvoters: { select: { id: true } },
+        upvoters: { disconnect: { id: req.user.id } },
+        downvoters: { connect: { id: req.user.id } },
       },
     });
-
-    // Cache'e yaz (Redis hatası ihtimaline karşı try-catch içinde)
-    try {
-      await redisClient.setEx(cacheKey, 300, JSON.stringify(tweets));
-    } catch (e) {}
-
-    res.json(tweets);
+    await clearAllFeedCache();
+    res.json({ message: "Downvoted" });
   } catch (error) {
-    console.error("GET FEED HATASI:", error);
-    res.status(500).json({ error: "Akış yüklenemedi 🚫" });
+    res.status(500).json({ error: "Hata" });
   }
 };
