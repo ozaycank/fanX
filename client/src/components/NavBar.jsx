@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
+import FanXLogo from '../assets/FanX-Logo.png';
 
 const Navbar = () => {
   const { user, logout } = useAuthStore();
@@ -13,8 +14,8 @@ const Navbar = () => {
   return (
     <nav className="bg-blue-900 text-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <Link to="/" className="text-2xl font-bold flex items-center gap-2">
-          ⚽ FanX
+       <Link to="/" className="flex items-center">
+          <img src={FanXLogo} alt="FanX Logo" className="h-10" />
         </Link>
         <div className="space-x-4 flex items-center">
           {user ? (

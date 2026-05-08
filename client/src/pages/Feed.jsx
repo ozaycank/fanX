@@ -4,6 +4,7 @@ import useAuthStore from '../store/authStore';
 import TweetInput from '../components/TweetInput';
 import TweetCard from '../components/TweetCard';
 import Loader from '../components/Loader';
+import FeedBg from '../assets/Feed-Bg.png'
 
 const Feed = () => {
   const [tweets, setTweets] = useState([]);
@@ -28,7 +29,8 @@ const Feed = () => {
   }, [sortType]); // Sıralama değiştikçe veriyi yeniden çek
 
   return (
-    <div className="max-w-2xl mx-auto px-2">
+    <div className="max-w-2xl mx-auto px-2 bg-cover bg-center bg-no-repeat" 
+      style={{ backgroundImage: `url(${FeedBg})` }}>
       {/* Tweet Giriş Alanı */}
       {user && (
         <div className="mb-6">
