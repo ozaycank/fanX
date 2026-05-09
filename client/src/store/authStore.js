@@ -10,6 +10,7 @@ const useAuthStore = create((set) => ({
   setUser: (userData) =>
     set((state) => ({
       user: userData ? { ...state.user, ...userData } : null,
+      isAuthenticated: !!userData,
     })),
   login: async (email, password) => {
     try {

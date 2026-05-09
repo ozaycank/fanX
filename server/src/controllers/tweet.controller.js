@@ -12,58 +12,27 @@ const clearAllFeedCache = async () => {
   }
 };
 
-exports.getFeed = async (req, res) => {
+exports.getFeed = async (req, res, next) => {
   try {
-    const { sort } = req.query; // newest, up, down
-    const cacheKey = `global_feed_${sort || "newest"}`;
-
-    const cachedData = await redisClient.get(cacheKey);
-    if (cachedData) return res.json(JSON.parse(cachedData));
-
-    let orderBy = { createdAt: "desc" };
-    if (sort === "up") orderBy = { upvoters: { _count: "desc" } };
-    if (sort === "down") orderBy = { downvoters: { _count: "desc" } };
-
-    const tweets = await prisma.tweet.findMany({
-      orderBy,
-      include: {
-        author: {
-          select: {
-            username: true,
-            displayName: true,
-            profilePic: true,
-            supportedTeam: true,
-          },
-        },
-        _count: { select: { upvoters: true, downvoters: true } },
-        upvoters: { select: { id: true } },
-        downvoters: { select: { id: true } },
-      },
-    });
-
-    await redisClient.setEx(cacheKey, 300, JSON.stringify(tweets));
+    const tweets = await tweetService.getTweets(req.query.sort);
     res.json(tweets);
   } catch (error) {
-    res.status(500).json({ error: "Feed yüklenemedi" });
+    next(error); // Hata middleware'ine gönder
   }
 };
 
-exports.createTweet = async (req, res) => {
+exports.createTweet = async (req, res, next) => {
   try {
     const { content, sportCategory, tags } = req.body;
     const tweet = await prisma.tweet.create({
       data: { content, sportCategory, tags, authorId: req.user.id },
-      include: {
-        author: {
-          select: { username: true, displayName: true, profilePic: true },
-        },
-      },
+      include: { author: { select: { username: true, displayName: true } } },
     });
 
-    await clearAllFeedCache(); // Cache temizlenmezse F5 atınca yeni tweet görünmez
+    await tweetService.clearFeedCache();
     res.status(201).json(tweet);
   } catch (error) {
-    res.status(500).json({ error: "Tweet atılamadı" });
+    next(error);
   }
 };
 
