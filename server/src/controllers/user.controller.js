@@ -1,7 +1,6 @@
-const { PrismaClient } = require("@prisma/client");
+const prisma = require("../utils/prisma");
 const bcrypt = require("bcrypt");
 const { redisClient } = require("../utils/redis");
-const prisma = new PrismaClient();
 
 // Herhangi bir kullanıcıyı adına göre getir (Profil görüntüleme için)
 exports.getUserByUsername = async (req, res) => {

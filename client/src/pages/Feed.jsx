@@ -8,7 +8,7 @@ import FeedBg from "../assets/Feed-Bg.png";
 
 const Feed = () => {
   const [tweets, setTweets] = useState([]);
-  const [sortType, setSortType] = useState("newest"); // 'newest', 'up', 'down'
+  const [sortType, setSortType] = useState("newest");
   const [loading, setLoading] = useState(true);
   const { user } = useAuthStore();
 
@@ -26,57 +26,76 @@ const Feed = () => {
 
   useEffect(() => {
     fetchTweets();
-  }, [sortType]); // Sıralama değiştikçe veriyi yeniden çek
+  }, [sortType]);
 
   return (
     <div className="min-h-screen relative">
+      {/* 1. Arkaplan Katmanı */}
       <div
-        className="fixed inset-0 -z-10 opacity-20 pointer-events-none bg-fixed"
-        style={{ backgroundImage: `url(${FeedBg})`, backgroundSize: "cover" }}
+        className="fixed inset-0 -z-10 opacity-15 pointer-events-none"
+        style={{
+          backgroundImage: `url(${FeedBg})`,
+          backgroundPosition: "center",
+          backgroundRepeat: "repeat",
+          backgroundSize: "400px",
+          backgroundAttachment: "fixed",
+        }}
       />
-      {/* Tweet Giriş Alanı */}
-      {user && (
-        <div className="max-w-2xl mx-auto px-2">
-          <TweetInput onTweetPosted={fetchTweets} />
-        </div>
-      )}
 
-      {/* Sıralama Butonları - Modern Görünüm */}
-      <div className="sticky top-20 z-40 flex justify-center gap-2 my-6 bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-sm border border-gray-100">
-        <button
-          onClick={() => setSortType("newest")}
-          className={`flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-all ${sortType === "newest" ? "bg-blue-600 text-white shadow-md" : "text-gray-500 hover:bg-gray-50"}`}
-        >
-          🕒 En Yeni
-        </button>
-        <button
-          onClick={() => setSortType("up")}
-          className={`flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-all ${sortType === "up" ? "bg-green-600 text-white shadow-md" : "text-gray-500 hover:bg-gray-50"}`}
-        >
-          👍 Popüler
-        </button>
-        <button
-          onClick={() => setSortType("down")}
-          className={`flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-all ${sortType === "down" ? "bg-red-600 text-white shadow-md" : "text-gray-500 hover:bg-gray-50"}`}
-        >
-          👎 Tartışmalı
-        </button>
+      {/* 2. İçerik Katmanı */}
+      <div className="max-w-2xl mx-auto px-2 pt-4">
+        {/* Tweet Giriş Alanı */}
+        {user && <TweetInput onTweetPosted={fetchTweets} />}
+
+        {/* Sıralama Butonları */}
+        <div className="sticky top-20 z-40 flex justify-center gap-2 my-6 bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-sm border border-gray-100">
+          <button
+            onClick={() => setSortType("newest")}
+            className={`flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-all ${
+              sortType === "newest"
+                ? "bg-blue-600 text-white shadow-md"
+                : "text-gray-500 hover:bg-gray-50"
+            }`}
+          >
+            🕒 En Yeni
+          </button>
+          <button
+            onClick={() => setSortType("up")}
+            className={`flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-all ${
+              sortType === "up"
+                ? "bg-green-600 text-white shadow-md"
+                : "text-gray-500 hover:bg-gray-50"
+            }`}
+          >
+            👍 Popüler
+          </button>
+          <button
+            onClick={() => setSortType("down")}
+            className={`flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-all ${
+              sortType === "down"
+                ? "bg-red-600 text-white shadow-md"
+                : "text-gray-500 hover:bg-gray-50"
+            }`}
+          >
+            👎 Tartışmalı
+          </button>
+        </div>
+
+        {/* Tweet Listesi veya Loader */}
+        {loading ? (
+          <Loader />
+        ) : (
+          <div className="space-y-4 pb-10">
+            {tweets.length > 0 ? (
+              tweets.map((t) => <TweetCard key={t.id} tweet={t} />)
+            ) : (
+              <div className="text-center py-10 text-gray-500">
+                📭 Henüz tweet yok. İlk pası sen at!
+              </div>
+            )}
+          </div>
+        )}
       </div>
-
-      {/* Tweet Listesi veya Loader */}
-      {loading ? (
-        <Loader />
-      ) : (
-        <div className="space-y-4 pb-10">
-          {tweets.length > 0 ? (
-            tweets.map((t) => <TweetCard key={t.id} tweet={t} />)
-          ) : (
-            <div className="text-center py-10 text-gray-500">
-              📭 Henüz tweet yok. İlk pası sen at!
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };

@@ -1,6 +1,6 @@
-const { PrismaClient } = require("@prisma/client");
+const prisma = require("../utils/prisma");
 const { redisClient } = require("../utils/redis");
-const prisma = new PrismaClient();
+const tweetService = require("../services/tweet.service");
 
 // Tüm feed cache'lerini temizleyen yardımcı fonksiyon
 const clearAllFeedCache = async () => {

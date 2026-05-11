@@ -1,6 +1,5 @@
-const { PrismaClient } = require("@prisma/client");
+const prisma = require("../utils/prisma");
 const { redisClient } = require("../utils/redis");
-const prisma = new PrismaClient();
 
 const CACHE_PREFIX = "global_feed_";
 
