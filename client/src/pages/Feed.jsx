@@ -29,7 +29,7 @@ const Feed = () => {
   }, [sortType]);
 
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen relative z-0">
       {/* 1. Arkaplan Katmanı */}
       <div
         className="fixed inset-0 -z-10 opacity-15 pointer-events-none"
