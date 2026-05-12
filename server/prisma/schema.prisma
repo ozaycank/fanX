@@ -37,3 +37,10 @@ model Tweet {
   upvoters      User[]   @relation("Upvotes")
   downvoters    User[]   @relation("Downvotes")
 }
+
+model Feedback {
+  id        Int      @id @default(autoincrement())
+  content   String
+  userId    Int?     // Giriş yapan kullanıcıysa ID'sini tutarız
+  createdAt DateTime @default(now())
+}

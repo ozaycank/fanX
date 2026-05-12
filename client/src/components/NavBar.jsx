@@ -29,6 +29,12 @@ const Navbar = () => {
           </div>
         </Link>
         <div className="space-x-4 flex items-center">
+          <Link
+            to="/feedback"
+            className="text-xs md:text-sm bg-blue-800/50 hover:bg-blue-700 px-3 py-1 rounded-full transition-all border border-blue-700"
+          >
+            📣 Bildir
+          </Link>
           {user ? (
             <>
               {/* Kullanıcı adına tıklandığında profile git */}
