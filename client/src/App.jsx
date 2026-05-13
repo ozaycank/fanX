@@ -8,6 +8,9 @@ import Profile from "./pages/Profile";
 import useAuthStore from "./store/authStore";
 import Feedback from "./pages/Feedback";
 import Footer from "./components/Footer";
+import FAQ from "./pages/FAQ";
+import PrivacyPolicy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 
 function App() {
   const { checkAuth, loading } = useAuthStore();
@@ -35,6 +38,9 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/:username" element={<Profile />} />
           <Route path="/feedback" element={<Feedback />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<Terms />} />
         </Routes>
       </main>
       <Footer />
