@@ -12,19 +12,14 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-blue-900 text-white shadow-md sticky top-0 z-50">
+    <nav className="bg-white text-blue-900 shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link to="/" className="flex items-center group">
-          <div className="relative h-10 w-32">
-            {" "}
-            {/* Logonun kaplayacağı alanı sabitledik */}
+          <div className="relative h-16">
             <img
               src={FanXLogo}
               alt="FanX Logo"
-              className="h-full w-full object-contain filter invert brightness-200 contrast-200"
-              style={{
-                mixBlendMode: "screen", // Siyahları şeffaf yapar, beyazları parlatır
-              }}
+              className="h-full w-auto object-contain"
             />
           </div>
         </Link>

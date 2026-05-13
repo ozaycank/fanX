@@ -7,6 +7,7 @@ import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import useAuthStore from "./store/authStore";
 import Feedback from "./pages/Feedback";
+import Footer from "./components/Footer";
 
 function App() {
   const { checkAuth, loading } = useAuthStore();
@@ -23,9 +24,9 @@ function App() {
     );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50">
       <Navbar />
-      <main className="container mx-auto px-4 py-6">
+      <main className="flex-grow container mx-auto px-4 py-6">
         <Routes>
           <Route path="/" element={<Feed />} />
           <Route path="/login" element={<Login />} />
@@ -36,6 +37,7 @@ function App() {
           <Route path="/feedback" element={<Feedback />} />
         </Routes>
       </main>
+      <Footer />
     </div>
   );
 }
