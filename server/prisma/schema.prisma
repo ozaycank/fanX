@@ -21,8 +21,10 @@ model User {
   
   upvotedTweets   Tweet[]  @relation("Upvotes")
   downvotedTweets Tweet[]  @relation("Downvotes")
+  reports Report[]
 
-  SentMessages Message[] @relation("SentMessages")
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
 }
 
 model Tweet {
@@ -34,9 +36,9 @@ model Tweet {
   author        User     @relation("UserTweets", fields: [authorId], references: [id])
   createdAt     DateTime @default(now())
 
-  // OYLAMA İLİŞKİLERİ:
   upvoters      User[]   @relation("Upvotes")
   downvoters    User[]   @relation("Downvotes")
+  reports Report[]
 }
 
 model Feedback {
@@ -56,4 +58,20 @@ model Message {
   // User tablosu ile ilişkiler
   sender     User     @relation("SentMessages", fields: [senderId], references: [id])
   receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}
+
+model Report {
+  id         Int      @id @default(autoincrement())
+  tweetId    Int
+  reporterId Int
+  reason     String   // 'SPAM', 'KUFUR', 'MUSTEHCEN'
+  status     String   @default("BEKLIYOR") // BEKLIYOR, INCELENDI
+  createdAt  DateTime @default(now())
+
+  // İlişkiler
+  tweet      Tweet    @relation(fields: [tweetId], references: [id])
+  reporter   User     @relation(fields: [reporterId], references: [id])
+
+  // Aynı kullanıcı bir tweeti sadece 1 kez şikayet edebilir
+  @@unique([tweetId, reporterId]) 
 }

@@ -12,6 +12,7 @@ import FAQ from "./pages/FAQ";
 import PrivacyPolicy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Chat from "./pages/Chat";
+import Messages from "./pages/Messages";
 
 function App() {
   const { checkAuth, loading } = useAuthStore();
@@ -43,6 +44,7 @@ function App() {
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/chat/:id" element={<Chat />} />
+          <Route path="/messages" element={<Messages />} />
         </Routes>
       </main>
       <Footer />

@@ -1,64 +1,104 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import useAuthStore from "../store/authStore";
 
 const Chat = () => {
-  const { id: receiverId } = useParams(); // URL'den gelen karşı tarafın ID'si
+  const { id: receiverId } = useParams();
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const messagesEndRef = useRef(null);
 
+  // ID'nin geçerli bir sayı olup olmadığını ve "undefined" olmadığını kontrol et
+  const isValidChat =
+    receiverId && receiverId !== "undefined" && !isNaN(Number(receiverId));
+
   const fetchMessages = async () => {
+    if (!isValidChat) return;
     try {
       const res = await api.get(`/messages/${receiverId}`);
       setMessages(res.data);
     } catch (err) {
-      console.error("Mesaj hatası", err);
+      console.error("Mesajlar senkronize edilemedi:", err);
     }
   };
 
   useEffect(() => {
+    if (!isValidChat) return;
+
     fetchMessages();
-    // Hafif Polling: Sistemi yormamak için her 5 saniyede bir yeni mesaj var mı diye bakar.
     const interval = setInterval(fetchMessages, 5000);
     return () => clearInterval(interval);
   }, [receiverId]);
 
-  // Yeni mesaj geldiğinde otomatik en alta in
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!text.trim()) return;
+    if (!text.trim() || !isValidChat) return;
 
-    // Arayüze anında ekle (kullanıcıya hızlı hissettirir)
-    const tempMessage = { id: Date.now(), content: text, senderId: user.id };
+    const currentText = text;
+    const tempId = `temp-${Date.now()}`;
+    // Store'dan gelen ID'yi güvenli bir şekilde sayıya dönüştür
+    const currentUserId = user?.id ? Number(user.id) : null;
+
+    const tempMessage = {
+      id: tempId,
+      content: currentText,
+      senderId: currentUserId,
+      createdAt: new Date().toISOString(),
+    };
+
     setMessages((prev) => [...prev, tempMessage]);
     setText("");
 
     try {
-      await api.post("/messages", { receiverId, content: text });
-      // Hata olmazsa arkaplanda zaten senkronize oldu
+      const res = await api.post("/messages", {
+        // Backend'e gönderirken de sayı formatında gönderdiğimizden emin oluyoruz
+        receiverId: Number(receiverId),
+        content: currentText,
+      });
+
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === tempId ? res.data : msg)),
+      );
     } catch (err) {
       alert("Mesaj iletilemedi.");
+      setMessages((prev) => prev.filter((msg) => msg.id !== tempId));
+      setText(currentText);
     }
   };
 
+  if (!isValidChat) {
+    return (
+      <div className="max-w-2xl mx-auto mt-10 text-center bg-red-50 text-red-700 p-6 rounded-xl border border-red-200 font-semibold shadow-sm">
+        <p className="mb-3">Geçersiz bir sohbet odasına yönlendirildiniz! 🏟️</p>
+        <button
+          onClick={() => navigate("/")}
+          className="px-4 py-2 bg-red-600 text-white rounded-full text-sm font-medium hover:bg-red-700 transition"
+        >
+          Ana Sayfaya Dön
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto h-[70vh] flex flex-col bg-white rounded-xl shadow-sm border border-gray-200">
-      {/* Header */}
       <div className="p-4 border-b border-gray-100 bg-blue-50/50 rounded-t-xl font-bold text-blue-900">
         Sohbet
       </div>
 
-      {/* Mesaj Alanı */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
         {messages.map((msg) => {
-          const isMe = msg.senderId === user.id;
+          // Gelen ve mevcut ID değerlerini tamamen sayıya (Number) eşitleyerek kontrol sağlıyoruz
+          const currentUserId = user?.id ? Number(user.id) : null;
+          const isMe = Number(msg.senderId) === currentUserId;
+
           return (
             <div
               key={msg.id}
@@ -79,7 +119,6 @@ const Chat = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Mesaj Gönderme Formu */}
       <form
         onSubmit={handleSend}
         className="p-3 bg-white border-t border-gray-200 flex gap-2 rounded-b-xl"
