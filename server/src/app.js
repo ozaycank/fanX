@@ -8,6 +8,7 @@ const tweetRoutes = require("./routes/tweet.routes");
 const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");
 const feedbackRoutes = require("./routes/feedback.routes");
+const messageRoutes = require("./routes/message.routes");
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/tweets", tweetRoutes);
 app.use("/api/feedback", feedbackRoutes);
+app.use("/api/messages", messageRoutes);
 
 // 404 Handler
 app.use((req, res) => res.status(404).json({ message: "Yol bulunamadı 🏟️" }));

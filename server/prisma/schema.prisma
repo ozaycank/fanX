@@ -19,9 +19,10 @@ model User {
   
   tweets          Tweet[]  @relation("UserTweets")
   
-  // OYLAMA İLİŞKİLERİ:
   upvotedTweets   Tweet[]  @relation("Upvotes")
   downvotedTweets Tweet[]  @relation("Downvotes")
+
+  SentMessages Message[] @relation("SentMessages")
 }
 
 model Tweet {
@@ -43,4 +44,16 @@ model Feedback {
   content   String
   userId    Int?     // Giriş yapan kullanıcıysa ID'sini tutarız
   createdAt DateTime @default(now())
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  content    String
+  senderId   Int
+  receiverId Int
+  createdAt  DateTime @default(now())
+
+  // User tablosu ile ilişkiler
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
 }
