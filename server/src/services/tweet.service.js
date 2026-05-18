@@ -29,6 +29,7 @@ exports.getTweets = async (sort) => {
     include: {
       author: {
         select: {
+          id: true,
           username: true,
           displayName: true,
           profilePic: true,
