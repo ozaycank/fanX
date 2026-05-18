@@ -4,7 +4,7 @@ import useAuthStore from "../store/authStore";
 import api from "../services/api";
 
 const Profile = () => {
-  const { username: urlUsername } = useParams(); // URL'den gelen kullanıcı adı
+  const { username: urlUsername } = useParams();
   const { user: currentUser, setUser } = useAuthStore();
 
   const [profileData, setProfileData] = useState(null);
@@ -12,7 +12,6 @@ const Profile = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Form State'leri
   const [editData, setEditData] = useState({
     displayName: "",
     supportedTeam: "",
@@ -24,7 +23,6 @@ const Profile = () => {
     newPassword: "",
   });
 
-  // Kendi profilimiz mi kontrolü
   const isOwnProfile = !urlUsername || urlUsername === currentUser?.username;
 
   useEffect(() => {
@@ -35,13 +33,15 @@ const Profile = () => {
         if (!targetUser) return;
 
         const response = await api.get(`/users/${targetUser}`);
-        setProfileData(response.data);
+        // ÇÖZÜM: response.data değil, response.data.user atandı
+        const userData = response.data.user;
+        setProfileData(userData);
 
-        if (isOwnProfile) {
+        if (isOwnProfile && userData) {
           setEditData({
-            displayName: response.data.displayName || "",
-            supportedTeam: response.data.supportedTeam || "",
-            profilePic: response.data.profilePic || "",
+            displayName: userData.displayName || "",
+            supportedTeam: userData.supportedTeam || "",
+            profilePic: userData.profilePic || "",
           });
         }
       } catch (error) {
@@ -52,14 +52,16 @@ const Profile = () => {
     };
 
     fetchProfile();
-  }, [urlUsername, currentUser?.username]);
+  }, [urlUsername, currentUser?.username, isOwnProfile]);
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     try {
       const response = await api.put("/users/profile", editData);
-      setUser({ ...currentUser, ...response.data });
-      setProfileData(response.data);
+      // ÇÖZÜM: response.data.user ile store ve state güncellendi
+      const updatedUser = response.data.user;
+      setUser(updatedUser);
+      setProfileData(updatedUser);
       setMessage("Profil başarıyla güncellendi! 🏆");
     } catch (error) {
       setMessage("Profil güncellenirken hata oluştu.");
@@ -108,10 +110,10 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* --- BAŞKASININ PROFİLİYSE MESAJ GÖNDER BUTONU --- */}
+        {/* Başkasının Profiliyse Mesaj Gönder Butonu */}
         {!isOwnProfile && currentUser && (
           <Link
-            to={`/chat/${profileData.id || profileData._id}`}
+            to={`/chat/${profileData.id}`}
             className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition shadow-sm self-start mt-2"
           >
             <svg

@@ -6,6 +6,7 @@ exports.getUserByUsername = async (username) => {
   const user = await prisma.user.findUnique({
     where: { username },
     select: {
+      id: true,
       username: true,
       displayName: true,
       profilePic: true,
@@ -17,7 +18,7 @@ exports.getUserByUsername = async (username) => {
   if (!user) {
     const error = new Error("Kullanıcı bulunamadı.");
     error.statusCode = 404;
-    throw error; // Controller'daki asyncHandler bunu yakalayıp global error middleware'e iletecek
+    throw error;
   }
 
   return user;
@@ -36,7 +37,6 @@ exports.updateProfile = async (userId, data) => {
     },
   });
 
-  // Profil bilgileri değiştiği için feed cache'ini temizle
   try {
     const keys = await redisClient.keys("global_feed_*");
     if (keys.length > 0) await redisClient.del(keys);
