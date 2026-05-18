@@ -13,6 +13,7 @@ import PrivacyPolicy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Chat from "./pages/Chat";
 import Messages from "./pages/Messages";
+import Admin from "./pages/Admin";
 
 function App() {
   const { checkAuth, loading } = useAuthStore();
@@ -45,6 +46,15 @@ function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/chat/:id" element={<Chat />} />
           <Route path="/messages" element={<Messages />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route
+            path="*"
+            element={
+              <div className="text-center mt-20 text-red-500">
+                Sayfa Bulunamadı 🏟️
+              </div>
+            }
+          />
         </Routes>
       </main>
       <Footer />
