@@ -1,5 +1,4 @@
-// src/routes/message.routes.js
-const router = require("express").Router();
+const express = require("express");
 const { protect } = require("../middlewares/auth.middleware");
 const {
   getMessages,
@@ -7,7 +6,9 @@ const {
   getConversations,
 } = require("../controllers/message.controller");
 
-router.get("/", protect, getConversations); // Konuşma listesi rotası
+const router = express.Router();
+
+router.get("/", protect, getConversations);
 router.get("/:receiverId", protect, getMessages);
 router.post("/", protect, sendMessage);
 

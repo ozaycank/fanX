@@ -1,16 +1,8 @@
-const router = require("express").Router();
-const prisma = require("../utils/prisma");
+const express = require("express");
+const { createFeedback } = require("../controllers/feedback.controller");
 
-router.post("/", async (req, res) => {
-  const { content, userId } = req.body;
-  try {
-    const feedback = await prisma.feedback.create({
-      data: { content, userId: userId || null },
-    });
-    res.status(201).json(feedback);
-  } catch (err) {
-    res.status(500).json({ error: "Mesaj iletilemedi." });
-  }
-});
+const router = express.Router();
+
+router.post("/", createFeedback);
 
 module.exports = router;

@@ -1,106 +1,58 @@
-const prisma = require("../utils/prisma");
+const messageService = require("../services/message.service");
 
-const getMessages = async (req, res) => {
-  const senderId = req.user.id;
-  const receiverId = parseInt(req.params.receiverId);
-
-  if (isNaN(receiverId)) {
-    return res.status(400).json({ error: "Geçersiz kullanıcı ID." });
-  }
-
+exports.getMessages = async (req, res, next) => {
   try {
-    const messages = await prisma.message.findMany({
-      where: {
-        OR: [
-          { senderId: senderId, receiverId: receiverId },
-          { senderId: receiverId, receiverId: senderId },
-        ],
-      },
-      orderBy: { createdAt: "asc" },
-    });
+    const senderId = req.user.id;
+    const receiverId = parseInt(req.params.receiverId);
+
+    if (isNaN(receiverId)) {
+      return res.status(400).json({ error: "Geçersiz kullanıcı ID." });
+    }
+
+    const messages = await messageService.getChatMessages(senderId, receiverId);
     res.json(messages);
-  } catch (err) {
-    res.status(500).json({ error: "Mesajlar yüklenemedi." });
+  } catch (error) {
+    error.statusCode = 500;
+    error.message = "Mesajlar yüklenemedi.";
+    next(error);
   }
 };
 
-const sendMessage = async (req, res) => {
-  const { receiverId, content } = req.body;
-  const senderId = req.user.id;
-
-  if (!content || !content.trim()) {
-    return res.status(400).json({ error: "Mesaj içeriği boş olamaz." });
-  }
-
+exports.sendMessage = async (req, res, next) => {
   try {
-    const message = await prisma.message.create({
-      data: {
-        content,
-        senderId,
-        receiverId: parseInt(receiverId),
-      },
-    });
+    const { receiverId, content } = req.body;
+    const senderId = req.user.id;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: "Mesaj içeriği boş olamaz." });
+    }
+
+    const parsedReceiverId = parseInt(receiverId);
+    if (isNaN(parsedReceiverId)) {
+      return res.status(400).json({ error: "Geçersiz alıcı ID." });
+    }
+
+    const message = await messageService.createMessage(
+      senderId,
+      parsedReceiverId,
+      content,
+    );
     res.status(201).json(message);
-  } catch (err) {
-    res.status(500).json({ error: "Mesaj gönderilemedi." });
+  } catch (error) {
+    error.statusCode = 500;
+    error.message = "Mesaj gönderilemedi.";
+    next(error);
   }
 };
 
-module.exports = { getMessages, sendMessage };
-
-const getConversations = async (req, res) => {
-  const userId = req.user.id;
-
+exports.getConversations = async (req, res, next) => {
   try {
-    // Kullanıcının dahil olduğu tüm mesajları çekiyoruz
-    const messages = await prisma.message.findMany({
-      where: {
-        OR: [{ senderId: userId }, { receiverId: userId }],
-      },
-      orderBy: { createdAt: "desc" },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            username: true,
-            displayName: true,
-            profilePic: true,
-          },
-        },
-        receiver: {
-          select: {
-            id: true,
-            username: true,
-            displayName: true,
-            profilePic: true,
-          },
-        },
-      },
-    });
-
-    // Mesajları karşı tarafa göre gruplayıp her konuşmanın sadece son mesajını tutuyoruz
-    const conversationsMap = new Map();
-
-    messages.forEach((msg) => {
-      // Karşı taraftaki kullanıcının bilgilerini seç
-      const chatPartner = msg.senderId === userId ? msg.receiver : msg.sender;
-
-      if (!conversationsMap.has(chatPartner.id)) {
-        conversationsMap.set(chatPartner.id, {
-          id: chatPartner.id,
-          username: chatPartner.username,
-          displayName: chatPartner.displayName,
-          profilePic: chatPartner.profilePic,
-          lastMessage: msg.content,
-          createdAt: msg.createdAt,
-        });
-      }
-    });
-
-    res.json(Array.from(conversationsMap.values()));
-  } catch (err) {
-    res.status(500).json({ error: "Konuşmalar yüklenemedi." });
+    const userId = req.user.id;
+    const conversations = await messageService.getUserConversations(userId);
+    res.json(conversations);
+  } catch (error) {
+    error.statusCode = 500;
+    error.message = "Konuşmalar yüklenemedi.";
+    next(error);
   }
 };
-
-module.exports = { getMessages, sendMessage, getConversations };
