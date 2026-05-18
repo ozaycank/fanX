@@ -44,9 +44,12 @@ const TweetCard = ({ tweet }) => {
     const now = new Date();
     const diff = Math.floor((now - new Date(date)) / 1000);
     if (diff < 60) return "Az önce";
-    if (diff < 3600) return `${Math.floor(diff / 60)}dk`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}d`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}sa`;
-    return new Date(date).toLocaleDateString("tr-TR");
+    return new Date(date).toLocaleDateString("tr-TR", {
+      month: "short",
+      day: "numeric",
+    });
   };
 
   const handleVote = async (type) => {
@@ -73,48 +76,49 @@ const TweetCard = ({ tweet }) => {
   };
 
   return (
-    <div className="bg-white/90 p-4 mx-auto max-w-2xl rounded-xl shadow-sm border border-gray-100 hover:border-blue-200 transition-all mb-4 relative">
-      <div className="flex gap-4">
+    <article className="w-full bg-[#F3F8F9] p-4 border-b border-gray-200 hover:bg-white transition-colors duration-200 text-black">
+      <div className="flex gap-3">
         {/* Sol Kısım: Profil Resmi */}
-        <Link to={`/profile/${author.username}`} className="flex-shrink-0 mt-1">
+        <Link to={`/profile/${author.username}`} className="flex-shrink-0 pt-1">
           <img
             src={
               author.profilePic ||
               `https://ui-avatars.com/api/?name=${author.username}&background=random`
             }
-            className="w-12 h-12 rounded-full border-2 border-transparent hover:border-blue-400 transition-all object-cover"
+            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover hover:opacity-90 transition-opacity"
             alt={author.username}
           />
         </Link>
 
-        {/* Sağ Kısım: Tweet İçeriği ve Aksiyonlar */}
-        <div className="flex-1 min-w-0">
-          {/* Üst Başlık Alanı */}
-          <div className="flex justify-between items-start w-full mb-1">
-            {/* Kullanıcı Bilgileri */}
-            <div className="flex items-center gap-1.5 flex-wrap">
+        {/* Sağ Kısım: Tweet İçeriği */}
+        <div className="flex-1 min-w-0 pb-1">
+          {/* Üst Başlık ve Menü Alanı */}
+          <div className="flex justify-between items-start w-full">
+            <div className="flex items-baseline gap-1.5 flex-wrap leading-tight">
               <Link
                 to={`/profile/${author.username}`}
-                className="font-bold text-gray-900 hover:underline truncate max-w-[150px] sm:max-w-[200px]"
+                className="font-bold text-[15px] text-black hover:underline truncate max-w-[140px] sm:max-w-[200px]"
               >
                 {author.displayName || author.username}
               </Link>
-              <span className="text-gray-500 text-sm truncate">
+              <Link
+                to={`/profile/${author.username}`}
+                className="text-[15px] text-gray-500 truncate"
+              >
                 @{author.username}
-              </span>
-              <span className="text-gray-300">·</span>
-              <span className="text-gray-400 text-xs whitespace-nowrap">
+              </Link>
+              <span className="text-gray-500 text-[15px]">·</span>
+              <span className="text-gray-500 text-[15px] hover:underline cursor-pointer whitespace-nowrap">
                 {formatTime(tweet.createdAt)}
               </span>
             </div>
 
-            {/* Sağ Üst Aksiyon Grubu (Mesaj + Seçenekler) */}
-            <div className="flex items-center gap-1">
-              {/* --- MESAJ GÖNDER BUTONU --- */}
+            {/* Sağ Üst Aksiyonlar */}
+            <div className="flex items-center -mt-1 -mr-2">
               {user && user.id !== author.id && (
                 <Link
                   to={`/chat/${author.id}`}
-                  className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 p-1.5 rounded-full active:scale-95"
+                  className="group p-2 rounded-full hover:bg-blue-50 transition-colors"
                   title="Mesaj Gönder"
                 >
                   <svg
@@ -123,7 +127,7 @@ const TweetCard = ({ tweet }) => {
                     viewBox="0 0 24 24"
                     strokeWidth={1.7}
                     stroke="currentColor"
-                    className="w-[18px] h-[18px]"
+                    className="w-[18px] h-[18px] text-gray-400 group-hover:text-blue-500"
                   >
                     <path
                       strokeLinecap="round"
@@ -134,12 +138,13 @@ const TweetCard = ({ tweet }) => {
                 </Link>
               )}
 
-              {/* --- BİLDİR (REPORT) MENÜSÜ --- */}
-              <div className="relative z-10" ref={menuRef}>
+              <div className="relative" ref={menuRef}>
                 <button
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200 p-1.5 rounded-full active:scale-95"
-                  title="Seçenekler"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowMenu(!showMenu);
+                  }}
+                  className="group p-2 rounded-full hover:bg-blue-50 transition-colors"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -147,7 +152,7 @@ const TweetCard = ({ tweet }) => {
                     viewBox="0 0 24 24"
                     strokeWidth={1.7}
                     stroke="currentColor"
-                    className="w-[18px] h-[18px]"
+                    className="w-[18px] h-[18px] text-gray-400 group-hover:text-blue-500"
                   >
                     <path
                       strokeLinecap="round"
@@ -158,11 +163,11 @@ const TweetCard = ({ tweet }) => {
                 </button>
 
                 {showMenu && (
-                  <div className="absolute right-0 mt-1 w-44 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 z-20 overflow-hidden">
+                  <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-100 rounded-xl shadow-[0_0_15px_rgba(0,0,0,0.1)] py-1.5 z-20">
                     {isReported ? (
-                      <div className="px-4 py-2 text-sm text-green-600 font-medium flex items-center gap-2">
+                      <div className="px-4 py-3 text-sm text-green-600 font-semibold flex items-center gap-2">
                         <svg
-                          className="w-4 h-4"
+                          className="w-5 h-5"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -178,27 +183,22 @@ const TweetCard = ({ tweet }) => {
                       </div>
                     ) : (
                       <>
-                        <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                          Sorun Nedir?
+                        <div className="px-4 py-2 text-xs font-bold text-gray-500 tracking-wider">
+                          Bildir
                         </div>
-                        <button
-                          onClick={() => handleReport("KÜFÜR/HAKARET")}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors"
-                        >
-                          Küfür veya Hakaret
-                        </button>
-                        <button
-                          onClick={() => handleReport("MÜSTEHCEN")}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors"
-                        >
-                          Müstehcen İçerik
-                        </button>
-                        <button
-                          onClick={() => handleReport("SPAM")}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors"
-                        >
-                          Spam / Reklam
-                        </button>
+                        {[
+                          "Küfür veya Hakaret",
+                          "Müstehcen İçerik",
+                          "Spam / Reklam",
+                        ].map((reason) => (
+                          <button
+                            key={reason}
+                            onClick={() => handleReport(reason.toUpperCase())}
+                            className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+                          >
+                            {reason}
+                          </button>
+                        ))}
                       </>
                     )}
                   </div>
@@ -208,54 +208,107 @@ const TweetCard = ({ tweet }) => {
           </div>
 
           {/* Tweet Metni */}
-          <p className="text-gray-800 text-[15px] leading-relaxed break-words">
+          <p className="text-[15px] text-black leading-normal break-words mt-0.5 whitespace-pre-wrap">
             {tweet.content}
           </p>
 
           {/* Kategoriler & Etiketler */}
           {(tweet.sportCategory || tweet.tags) && (
-            <div className="flex flex-wrap gap-2 mt-3">
+            <div className="flex flex-wrap gap-2 mt-3 items-center">
               {tweet.sportCategory && (
-                <span className="bg-blue-50/80 text-blue-600 text-[10px] px-2.5 py-1 rounded-md font-bold uppercase tracking-wide">
+                <span className="bg-white text-gray-600 text-[11px] px-2 py-0.5 rounded border border-gray-200 font-bold uppercase tracking-wide">
                   {tweet.sportCategory}
                 </span>
               )}
               {tweet.tags && (
-                <span className="text-blue-500 text-sm hover:underline cursor-pointer transition-colors">
+                <span className="text-blue-500 hover:underline cursor-pointer text-sm transition-colors">
                   #{tweet.tags.replace("#", "")}
                 </span>
               )}
             </div>
           )}
 
-          {/* Alt Kısım: Upvote / Downvote Butonları */}
-          <div className="flex gap-6 mt-4 border-t border-gray-50 pt-3">
+          {/* Aksiyon Satırı (Upvote / Downvote) */}
+          <div className="flex items-center gap-6 mt-3 max-w-md">
+            {/* Upvote */}
             <button
               onClick={() => handleVote("upvote")}
-              className={`flex items-center gap-1.5 transition-all duration-200 active:scale-75 ${
-                votes.hasUp
-                  ? "text-green-600"
-                  : "text-gray-400 hover:text-green-500"
-              }`}
+              className="group flex items-center gap-1 transition-colors"
             >
-              <span className="text-[1.1rem] leading-none">👍</span>
-              <span className="font-semibold text-sm">{votes.up}</span>
+              <div
+                className={`p-2 rounded-full transition-colors duration-200 ${
+                  votes.hasUp
+                    ? "bg-green-50 text-green-500"
+                    : "text-gray-500 hover:bg-green-50 hover:text-green-500"
+                }`}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill={votes.hasUp ? "currentColor" : "none"}
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-[18px] h-[18px]"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M8.25 6.75 12 3m0 0 3.75 3.75M12 3v18"
+                  />
+                </svg>
+              </div>
+              <span
+                className={`text-[13px] font-medium transition-colors ${
+                  votes.hasUp
+                    ? "text-green-500"
+                    : "text-gray-500 group-hover:text-green-500"
+                }`}
+              >
+                {votes.up > 0 && votes.up}
+              </span>
             </button>
+
+            {/* Downvote */}
             <button
               onClick={() => handleVote("downvote")}
-              className={`flex items-center gap-1.5 transition-all duration-200 active:scale-75 ${
-                votes.hasDown
-                  ? "text-red-600"
-                  : "text-gray-400 hover:text-red-500"
-              }`}
+              className="group flex items-center gap-1 transition-colors"
             >
-              <span className="text-[1.1rem] leading-none">👎</span>
-              <span className="font-semibold text-sm">{votes.down}</span>
+              <div
+                className={`p-2 rounded-full transition-colors duration-200 ${
+                  votes.hasDown
+                    ? "bg-red-50 text-red-500"
+                    : "text-gray-500 hover:bg-red-50 hover:text-red-500"
+                }`}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill={votes.hasDown ? "currentColor" : "none"}
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-[18px] h-[18px]"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15.75 17.25 12 21m0 0-3.75-3.75M12 21V3"
+                  />
+                </svg>
+              </div>
+              <span
+                className={`text-[13px] font-medium transition-colors ${
+                  votes.hasDown
+                    ? "text-red-500"
+                    : "text-gray-500 group-hover:text-red-500"
+                }`}
+              >
+                {votes.down > 0 && votes.down}
+              </span>
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 };
 

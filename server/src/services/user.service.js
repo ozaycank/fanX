@@ -3,7 +3,7 @@ const bcrypt = require("bcrypt");
 const { redisClient } = require("../utils/redis");
 
 exports.getUserByUsername = async (username) => {
-  return await prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { username },
     select: {
       username: true,
@@ -13,6 +13,14 @@ exports.getUserByUsername = async (username) => {
       createdAt: true,
     },
   });
+
+  if (!user) {
+    const error = new Error("Kullanıcı bulunamadı.");
+    error.statusCode = 404;
+    throw error; // Controller'daki asyncHandler bunu yakalayıp global error middleware'e iletecek
+  }
+
+  return user;
 };
 
 exports.updateProfile = async (userId, data) => {
@@ -33,7 +41,7 @@ exports.updateProfile = async (userId, data) => {
     const keys = await redisClient.keys("global_feed_*");
     if (keys.length > 0) await redisClient.del(keys);
   } catch (err) {
-    console.error("Redis Hatası:", err);
+    console.error("Redis Hatası (User Service):", err);
   }
 
   return updatedUser;
@@ -43,13 +51,17 @@ exports.changePassword = async (userId, oldPassword, newPassword) => {
   const user = await prisma.user.findUnique({ where: { id: userId } });
 
   if (!user) {
-    throw { status: 404, message: "Kullanıcı bulunamadı." };
+    const error = new Error("Kullanıcı bulunamadı.");
+    error.statusCode = 404;
+    throw error;
   }
 
   const isMatch = await bcrypt.compare(oldPassword, user.password);
 
   if (!isMatch) {
-    throw { status: 400, message: "Eski parola hatalı." };
+    const error = new Error("Eski parola hatalı.");
+    error.statusCode = 400;
+    throw error;
   }
 
   const hashedPassword = await bcrypt.hash(newPassword, 10);

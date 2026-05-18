@@ -10,6 +10,7 @@ const userRoutes = require("./routes/user.routes");
 const feedbackRoutes = require("./routes/feedback.routes");
 const messageRoutes = require("./routes/message.routes");
 const reportRoutes = require("./routes/reports.routes");
+const adminRoutes = require("./routes/admin.routes");
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/api/tweets", tweetRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/admin", adminRoutes);
 // 404 Handler (Eğer yukarıdaki hiçbir rotaya eşleşmezse)
 app.use((req, res) => res.status(404).json({ message: "Yol bulunamadı 🏟️" }));
 
