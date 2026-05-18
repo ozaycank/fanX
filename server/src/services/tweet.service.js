@@ -3,6 +3,15 @@ const { redisClient } = require("../utils/redis");
 
 const CACHE_PREFIX = "global_feed_";
 
+exports.clearFeedCache = async () => {
+  try {
+    const keys = await redisClient.keys(`${CACHE_PREFIX}*`);
+    if (keys.length > 0) await redisClient.del(keys);
+  } catch (err) {
+    console.error("Redis temizleme hatası:", err);
+  }
+};
+
 exports.getTweets = async (sort) => {
   const cacheKey = `${CACHE_PREFIX}${sort || "newest"}`;
 
@@ -37,9 +46,43 @@ exports.getTweets = async (sort) => {
   return tweets;
 };
 
-exports.clearFeedCache = async () => {
-  const keys = await redisClient.keys(`${CACHE_PREFIX}*`);
-  if (keys.length > 0) await redisClient.del(keys);
+exports.createTweet = async (tweetData, authorId) => {
+  const tweet = await prisma.tweet.create({
+    data: {
+      content: tweetData.content,
+      sportCategory: tweetData.sportCategory,
+      tags: tweetData.tags,
+      authorId,
+    },
+    include: { author: { select: { username: true, displayName: true } } },
+  });
+
+  await this.clearFeedCache();
+  return tweet;
 };
 
-// upvote/downvote mantığını da buraya taşıyabilirsin...
+exports.upvoteTweet = async (tweetId, userId) => {
+  const updatedTweet = await prisma.tweet.update({
+    where: { id: tweetId },
+    data: {
+      downvoters: { disconnect: { id: userId } },
+      upvoters: { connect: { id: userId } },
+    },
+  });
+
+  await this.clearFeedCache();
+  return updatedTweet;
+};
+
+exports.downvoteTweet = async (tweetId, userId) => {
+  const updatedTweet = await prisma.tweet.update({
+    where: { id: tweetId },
+    data: {
+      upvoters: { disconnect: { id: userId } },
+      downvoters: { connect: { id: userId } },
+    },
+  });
+
+  await this.clearFeedCache();
+  return updatedTweet;
+};

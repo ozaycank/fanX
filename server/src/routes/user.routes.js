@@ -5,6 +5,7 @@ const {
   getUserByUsername,
 } = require("../controllers/user.controller");
 const { protect } = require("../middlewares/auth.middleware");
+
 const router = express.Router();
 
 router.put("/profile", protect, updateProfile);

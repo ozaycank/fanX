@@ -1,71 +1,52 @@
-const prisma = require("../utils/prisma");
-const { redisClient } = require("../utils/redis");
 const tweetService = require("../services/tweet.service");
-
-// Tüm feed cache'lerini temizleyen yardımcı fonksiyon
-const clearAllFeedCache = async () => {
-  try {
-    const keys = await redisClient.keys("global_feed_*");
-    if (keys.length > 0) await redisClient.del(keys);
-  } catch (err) {
-    console.error("Redis temizleme hatası:", err);
-  }
-};
 
 exports.getFeed = async (req, res, next) => {
   try {
     const tweets = await tweetService.getTweets(req.query.sort);
     res.json(tweets);
   } catch (error) {
-    next(error); // Hata middleware'ine gönder
+    next(error);
   }
 };
 
 exports.createTweet = async (req, res, next) => {
   try {
     const { content, sportCategory, tags } = req.body;
-    const tweet = await prisma.tweet.create({
-      data: { content, sportCategory, tags, authorId: req.user.id },
-      include: { author: { select: { username: true, displayName: true } } },
-    });
+    const authorId = req.user.id;
 
-    await tweetService.clearFeedCache();
+    const tweet = await tweetService.createTweet(
+      { content, sportCategory, tags },
+      authorId,
+    );
+
     res.status(201).json(tweet);
   } catch (error) {
     next(error);
   }
 };
 
-exports.upvoteTweet = async (req, res) => {
+exports.upvoteTweet = async (req, res, next) => {
   try {
     const tweetId = parseInt(req.params.id);
-    await prisma.tweet.update({
-      where: { id: tweetId },
-      data: {
-        downvoters: { disconnect: { id: req.user.id } },
-        upvoters: { connect: { id: req.user.id } },
-      },
-    });
-    await clearAllFeedCache(); // Sıralamanın değişmesi için cache temizlenmeli
+    const userId = req.user.id;
+
+    await tweetService.upvoteTweet(tweetId, userId);
+
     res.json({ message: "Upvoted" });
   } catch (error) {
-    res.status(500).json({ error: "Hata" });
+    next(error);
   }
 };
 
-exports.downvoteTweet = async (req, res) => {
+exports.downvoteTweet = async (req, res, next) => {
   try {
     const tweetId = parseInt(req.params.id);
-    await prisma.tweet.update({
-      where: { id: tweetId },
-      data: {
-        upvoters: { disconnect: { id: req.user.id } },
-        downvoters: { connect: { id: req.user.id } },
-      },
-    });
-    await clearAllFeedCache();
+    const userId = req.user.id;
+
+    await tweetService.downvoteTweet(tweetId, userId);
+
     res.json({ message: "Downvoted" });
   } catch (error) {
-    res.status(500).json({ error: "Hata" });
+    next(error);
   }
 };
